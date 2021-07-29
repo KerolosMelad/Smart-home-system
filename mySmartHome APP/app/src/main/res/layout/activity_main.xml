@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:onClick="smarthome"
+    tools:context=".MainActivity"><![CDATA[
+
+
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="-1dp"
+        android:layout_marginTop="417dp"
+        android:orientation="vertical">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ]]>
+
+    <Button
+        android:id="@+id/button1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button4"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/imageView4"
+        android:layout_marginBottom="23dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginStart="-3dp"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/mybutton"
+        android:onClick="smarthome"
+        android:padding="10dp"
+        android:text="Smart door"
+        android:textColor="#ffffff" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/button3"
+        android:layout_width="wrap_content"
+        android:layout_height="27dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="15dp"
+        android:layout_marginStart="369dp"
+        android:layout_marginTop="302dp"
+        android:background="@drawable/circle"
+        android:clickable="false"
+        android:text="1"
+        android:textColor="#FFFFFF"
+        android:visibility="invisible" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/button5"
+        android:layout_width="15dp"
+        android:layout_height="16dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="363dp"
+        android:layout_marginStart="33dp"
+        android:layout_marginTop="604dp"
+        android:background="@drawable/redcircle"
+        android:clickable="false"
+        android:textColor="#FFFFFF"
+        android:visibility="visible" />
+
+    <Button
+        android:id="@+id/button4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button6"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="23dp"
+        android:background="@drawable/mybutton"
+        android:onClick="Log"
+        android:text="Log" />
+
+    <Button
+        android:id="@+id/button6"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="212dp"
+        android:layout_marginStart="0dp"
+        android:background="@drawable/mybutton"
+        android:onClick="homeowners"
+        android:text="home owners" />
+
+    <ImageView
+        android:id="@+id/imageView4"
+        android:layout_width="match_parent"
+        android:layout_height="341dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginEnd="0dp"
+        android:layout_marginStart="-1dp"
+        android:layout_marginTop="-41dp"
+        app:srcCompat="@drawable/smart_home" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="94dp"
+        android:layout_marginStart="56dp"
+        android:text="The system is turned off."
+        android:textColor="#000000"
+        android:visibility="visible" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/button10"
+        android:layout_width="173dp"
+        android:layout_height="31dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="41dp"
+        android:background="@color/design_default_color_error"
+        android:fontFamily="sans-serif"
+        android:onClick="turnoff"
+        android:text="turn off the system"
+        android:textColor="#FFFFFF"
+        android:visibility="invisible" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/button11"
+        android:layout_width="173dp"
+        android:layout_height="31dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="41dp"
+        android:background="@color/design_default_color_secondary_variant"
+        android:fontFamily="sans-serif"
+        android:onClick="turnon"
+        android:text="turn on the system"
+        android:textColor="#FFFFFF"
+        android:visibility="visible" />
+
+</RelativeLayout>

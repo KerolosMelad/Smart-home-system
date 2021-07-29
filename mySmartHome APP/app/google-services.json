@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "146136556212",
+    "project_id": "computer-vision-a47ad",
+    "storage_bucket": "computer-vision-a47ad.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:146136556212:android:34508c9fdb94c5077cade1",
+        "android_client_info": {
+          "package_name": "com.example.mysmarthome"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "146136556212-6blsthsojnkugcac4noj01klecaoscl6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mysmarthome",
+            "certificate_hash": "7094d2f646d1c60271531fd16d26039a39c6e618"
+          }
+        },
+        {
+          "client_id": "146136556212-ckabamlf122a61796gua794kab013r99.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFnwtIiclaGI_TPab1YnZKCbiajeT3elw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "146136556212-ckabamlf122a61796gua794kab013r99.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
