@@ -43,6 +43,7 @@ def run(db_pathx):
         FlagClose = False
         FlagNotPRed= False 
         MakeAgesture=False
+        endsignal = False
 
         faceDetection = mp.solutions.face_detection.FaceDetection(0.8) # mediapipe_BlazeFace  
 
@@ -84,7 +85,7 @@ def run(db_pathx):
 
             if(self.ids!=0 ):
                 self.AAction=True
-            Gesture_Time_window = 3 
+            Gesture_Time_window = 4
             if(FoundOwner):
                 self.FlagHomeOwner = True 
                 def listToString(s): 
@@ -99,9 +100,9 @@ def run(db_pathx):
                     T = HP.Real_data[len(HP.Real_data)-1][1]
                     if(self.StarAT -T <= Gesture_Time_window):
                         gesture=gesture_T[0]
-                        if (gesture == 'Sliding Right'):
+                        if (gesture == 'Swiping Right'):
                             self.FlagOpen = True 
-                        elif  (gesture == 'Sliding Left'):
+                        elif  (gesture == 'Swiping Left'):
                             self.FlagClose = True 
                         elif(gesture == 'NOT a predifiend Gesture'):
                             self.FlagNotPRed =True
@@ -115,7 +116,7 @@ def run(db_pathx):
                     else :
                         self.MakeAgesture =False
 
-
+            self.endsignal=True
             self.StarAT = -1
             self.Reco= False
 
@@ -230,7 +231,7 @@ def run(db_pathx):
 
 
 
-    # _Mobile App 
+     # _Mobile App 
     import FCMManager as fcm
 
 
@@ -263,25 +264,41 @@ def run(db_pathx):
 
 
 
-    def upload_To_Cloud_AND_PC(imgname , frame,counterguest):
+    def upload_image_To_Cloud_AND_PC(imgname , frame,counterguest):
         cv2.imwrite(imgname, frame)
         storage.child("guest"+str(counterguest)+".jpg").put(imgname)
+        frame =[] 
         #print("guest"+str(counterguest)+".jpg" , " uploaded")
+    
+    
+
+#-----------------
+    class solenoidPI:
+        Flag=True
+        solenoid_State ='close'
+
+        def open(self):
+            #import RPi.GPIO as GPIO
+            #LED_PIN = 17
+            #GPIO.setwarnings(False) 
+            #GPIO.setmode(GPIO.BCM)
+            #GPIO.setup(LED_PIN, GPIO.OUT)
+            print("solenoid is opening")
+
+            while(self.Flag):
+                 pass # PC_has no_control _to Solenoid
+
+
+           # print("solenoid  closed")
+
+
+            #GPIO.cleanup()
 
 
 
-    #-----------------
-
-
-
-
-
-    def open():
-        print("actuator open")
-
-
-    def close():
-        print("actuator close")
+        def close(self):
+            self.Flag = False
+            print("solenoid  closed")
 
     class FireDB :
         systemOnFlag = True;
@@ -292,9 +309,23 @@ def run(db_pathx):
                 action =db.child("smartdoor").get().val()
                 db.child("smartdoor").remove()
                 if(action == 'open'):
-                    open()
+                    if(solenoid.solenoid_State == 'close'):
+                        solenoid.solenoid_State = 'open'
+                        solenoid.Flag=True
+                        t7 = threading.Thread(target= solenoid.open , args = ())
+                        t7.start()
+                    else :
+                        print("The door is already open")
+
                 else:
-                    close()
+                    if(solenoid.solenoid_State == 'open'):
+                        solenoid.solenoid_State = 'close'
+                        t7 = threading.Thread(target= solenoid.close , args = ())
+                        t7.start()
+                    else:
+                        print("The door is already closed")
+
+
             if(db.child("appsystem").get().val()):
                 system =db.child("appsystem").get().val()
                 db.child("appsystem").remove()
@@ -304,9 +335,16 @@ def run(db_pathx):
 
 
 
-    def goUpdateDB(who , action , time):
+
+    def goUpdateLOG(who , action , time):
 
         db.child("log").push({"person" :who, "action" : action , "time": time})
+
+
+
+
+
+
 
 
 
@@ -319,11 +357,15 @@ def run(db_pathx):
 
     firedb =FireDB()
 
+    solenoid = solenoidPI()
+
+
     import FDetectionProcess 
     FD  = FDetectionProcess.FDetection()
 
     import HandProcess
     HP=HandProcess.Hand_Process()
+
 
 
     def runsystem():
@@ -339,17 +381,28 @@ def run(db_pathx):
 
 
 
+        if(db.child("smartdoor").get().val()):
+            db.child("smartdoor").remove()
+
+
+
         capture = cv2.VideoCapture(0)
-        firedb.systemOnFlag = True
+
+
         while(True):
 
             list_threads = []
             LOG = pd.DataFrame({'person\s' : [],'Action':[],'time':[]})
             FD.outputs =[]
             FP.outputs =[]
+            HP.outputs =[] 
+            HP.tracked_point = 0 
 
 
             ret, img = capture.read()
+            if img is None:
+                pass
+            #print(img.shape)
             frame = img .copy()
             STime = time.time()  
 
@@ -361,82 +414,81 @@ def run(db_pathx):
             t3 = threading.Thread(target= FD.blazeface, args = (img,HP,))
 
 
-            if( time.time() - DBchecker>=1):
+            if( time.time() - DBchecker>=2 and FP.Reco == False):
                 t5 = threading.Thread(target= firedb.checkdb, args = ())
                 t5.start()
                 DBchecker = time.time()
+                #print("dbcecker thread started")
 
 
 
-            if( (time.time() - HP.Startreco <2) and HP.Startreco !=-1 and t2.is_alive()==False ): 
+            if( FP.endsignal == False and HP.Startreco !=-1 and t2.is_alive()==False ): 
                 HP.makeFDsleep =True 
                 FD.makeHPsleep =True 
                 t2.start()
                 list_threads.append(t2)
 
+                #print("face reco thread started")
 
 
-            elif((time.time() - HP.Startreco >2) and HP.Startreco !=-1 ):
+
+
+            elif((FP.endsignal or time.time() - HP.Startreco >7) and HP.Startreco !=-1  ):
                 HP.Startreco=-1
                 FP.StarAT = -1
                 FP.Reco= False
                 HP.makeFDsleep =False    
-                FD.makeHPsleep =False 
+                FD.makeHPsleep =False
+                FP.endsignal = False
+                #print("face reco thread ended")
 
 
-            if(FD.Startreco != -1 and time.time() - FD.Startreco <=2 and t2.is_alive()==False ):
+            if(FD.Startreco != -1 and FP.endsignal == False and t2.is_alive()==False ):
                 FD.makeHPsleep =True 
                 HP.makeFDsleep= True
                 t2.start()
                 list_threads.append(t2)
+                #print("face reco thread started")
 
-            elif (FD.Startreco != -1 and time.time() - FD.Startreco >= 2):
+            elif (FD.Startreco != -1 and (FP.endsignal or time.time() - FD.Startreco >7) ):
                 FP.StarAT = -1
                 FP.Reco= False
                 FD.Startreco = -1
                 FD.makeHPsleep =False
                 HP.makeFDsleep= False
+                FP.endsignal = False
+                #print("face reco thread started")
 
 
-            if(timer != -1 and time.time() -timer<=1.5 and HP.makeFDsleep== False  ):
+            if(timer != -1 and time.time() -timer<=0.5 and HP.makeFDsleep== False  ):
+                FD.makeHPsleep = True
                 t3.start()
+                #print("face d thread started")
                 list_threads.append(t3)
-            elif (time.time() -timer>1.5 and Flag ==False ):
+            elif (time.time() -timer>=0.5 and Flag ==False ):
                 ended =time.time()
                 Flag= True
+                FD.makeHPsleep = False
             if(HP.makeFDsleep== False and time.time() -ended >=5 and Flag and time.time()-last_action >=15 ):
                 timer = time.time()
                 Flag= False
 
+            #print(FD.makeHPsleep)
 
 
 
             if(FD.makeHPsleep== False ):
+                #print(FD.makeHPsleep)
                 t1.start()
                 list_threads.append(t1)
+                #print("hand thread started")
 
 
             for thread in list_threads:   
-                thread.join() 
+                thread.join()
+               ##printt(" thread ended")
 
 
-
-        #------------------------------ Visualize the output
-
-            ETime =time.time()  
-            minus =ETime-STime
-            Fps = 100
-            if(minus != 0):
-                Fps = math.floor(1/(ETime-STime))
-            if(len(FD.outputs) !=0 ):
-                for (x,y,w,h) in FD.outputs:
-                    cv2.rectangle(frame, (x,y), (x+w,y+h), (67, 67, 67), 1)
-
-            if(len(FP.outputs) !=0 ):
-                for (x,y,w,h,label_name) in FP.outputs:
-                    cv2.rectangle(frame, (x,y), (x+w,y+h), (67, 67, 67), 1)
-                    cv2.rectangle(frame, (x,y+h+20), (x+w,y+h), (67, 67, 67), -1)
-                    cv2.putText(frame, label_name, (x,y+h+15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
 
 
         #------------------------ acessing and handling info------------------------------------
@@ -446,34 +498,57 @@ def run(db_pathx):
 
             today = date.today()
             d4 = today.strftime("%b-%d-%Y")
-            directory= db_path+ "\LOGs" +"/"+d4
+            directory= db_path+ "/LOGs" +"/"+d4
 
             if path.exists(directory) == False:
                 os.mkdir(directory)
+
+            guestsFile = directory+"/"+"guest"
+            if path.exists(guestsFile) == False : 
+                os.mkdir(guestsFile)
 
 
 
             if(FP.AAction): 
                 now = datetime.now()
                 dt_string = now.strftime("%H:%M:%S")
-                tmpName=directory+"/"+"guest"+str(firedb.counterguest)+".jpg"
+                tmpName=guestsFile+"/"+str(firedb.counterguest)+".jpg"
                 if(FP.FlagHomeOwner):
                     if(FP.FlagOpen):
 
 
                         print(FP.Who+" Opened the door")
-                        open()
+                        if(solenoid.solenoid_State == 'close'):
+                            solenoid.solenoid_State = 'open'
+                            solenoid.Flag=True
+                            t7 = threading.Thread(target= solenoid.open , args = ())
+                            t7.start()
+                        else :
+                            print("The door is already open")
+
+
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Opened the door",'time':dt_string } ,ignore_index=True)
-                        t6 = threading.Thread(target= goUpdateDB , args = (FP.Who , " Opened the door",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Opened the door",dt_string,))
                         t6.start()
 
                     elif(FP.FlagClose):
 
 
                         print(FP.Who+" Closed the door")
-                        close()
+
+                        if(solenoid.solenoid_State == 'open'):
+
+
+                            solenoid.solenoid_State = 'close'
+                            t7 = threading.Thread(target= solenoid.close , args = ())
+                            t7.start()
+
+                        else :
+                            print("The door is already closed")
+
+
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Closed the door",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target=goUpdateDB , args = (FP.Who , " Closed the door",dt_string,))
+                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Closed the door",dt_string,))
                         t6.start()
 
 
@@ -484,7 +559,7 @@ def run(db_pathx):
 
                         print(FP.Who+" Made Not A Predifined gesture ! ")
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Made Not A Predifined gesture !",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target= goUpdateDB , args = (FP.Who , " Made Not A Predifined gesture !",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Made Not A Predifined gesture !",dt_string,))
                         t6.start()              
 
 
@@ -493,7 +568,7 @@ def run(db_pathx):
                         print(FP.Who+" Waiting for a while and Made no gestures")  
 
 
-                        t5 = threading.Thread(target= upload_To_Cloud_AND_PC , args = (tmpName , frame,firedb.counterguest,))
+                        t5 = threading.Thread(target= upload_image_To_Cloud_AND_PC , args = (tmpName , frame.copy(),firedb.counterguest,))
                         t5.start()
 
 
@@ -507,19 +582,19 @@ def run(db_pathx):
 
                         #------------ updata log
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Made no gestures",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target=goUpdateDB , args = (FP.Who , " Made no gestures",dt_string,))
+                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Made no gestures",dt_string,))
                         t6.start()   
 
 
 
                 else :
                     if(FP.MakeAgesture):
-                        print(FP.Who+" Waiting and Tried to Acess !! ")
+                        print("ACCESS DENIED ")
 
                          #------------ save guests' faces
 
 
-                        t5 = threading.Thread(target= upload_To_Cloud_AND_PC , args = (tmpName , frame,firedb.counterguest,))
+                        t5 = threading.Thread(target= upload_image_To_Cloud_AND_PC , args = (tmpName , frame.copy(),firedb.counterguest,))
                         t5.start()
 
 
@@ -535,7 +610,7 @@ def run(db_pathx):
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Waiting and Tried to Acess !!",'time':dt_string },ignore_index=True)
 
-                        t6 = threading.Thread(target= goUpdateDB , args = (FP.Who , "  Waiting and Tried to Acess !!",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , "  Waiting and Tried to Acess !!",dt_string,))
                         t6.start()   
 
 
@@ -546,7 +621,7 @@ def run(db_pathx):
 
 
 
-                        t5 = threading.Thread(target= upload_To_Cloud_AND_PC , args = (tmpName , frame,firedb.counterguest,))
+                        t5 = threading.Thread(target= upload_image_To_Cloud_AND_PC , args = (tmpName , frame.copy(),firedb.counterguest,))
                         t5.start()
 
 
@@ -563,7 +638,7 @@ def run(db_pathx):
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Waiting",'time':dt_string },ignore_index=True)
                         db.child("log").push({"person" :FP.Who, "action" : " Waiting " , "time": dt_string})
-                        t6 = threading.Thread(target= goUpdateDB , args = (FP.Who , " Waiting ",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Waiting ",dt_string,))
                         t6.start()   
 
 
@@ -601,7 +676,30 @@ def run(db_pathx):
 
 
 
-        #--------------------------------------
+    #------------------------------ Visualize the output
+
+            ETime =time.time()  
+            minus =ETime-STime
+            Fps = 100
+            if(minus != 0):
+                Fps = round(1/(ETime-STime),2)
+
+            if(len(HP.outputs) != 0):
+                for handLandmarks in HP.outputs :
+                    HP.drawingModule.draw_landmarks(frame, handLandmarks, HP.handsModule.HAND_CONNECTIONS)
+                if(HP.tracked_point !=0) :
+                    cv2.circle(frame, (HP.tracked_point[0],HP.tracked_point[1]), 5, (0, 255, 255), -1)
+
+
+            if(len(FD.outputs) !=0 ):
+                for (x,y,w,h) in FD.outputs:
+                    cv2.rectangle(frame, (x,y), (x+w,y+h), (67, 67, 67), 1)
+
+            if(len(FP.outputs) !=0 ):
+                for (x,y,w,h,label_name) in FP.outputs:
+                    cv2.rectangle(frame, (x,y), (x+w,y+h), (67, 67, 67), 1)
+                    cv2.rectangle(frame, (x,y+h+20), (x+w,y+h), (67, 67, 67), -1)
+                    cv2.putText(frame, label_name, (x,y+h+15), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 1)
 
 
             cv2.putText(frame, "FPS: "+str(Fps), (0,25), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (67, 67, 67), 2)
@@ -611,12 +709,13 @@ def run(db_pathx):
             if (cv2.waitKey(1) & 0xFF == ord('q')) or firedb.systemOnFlag == False :
                 db.child("system").remove()
                 db.child("system").push({"state" : "close"})
+                firedb.systemOnFlag=False
                 break
 
         cv2.destroyAllWindows()
         capture.release()
 
-    DBCHECKER=-1
+
     
     runsystem()
 
