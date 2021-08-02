@@ -348,11 +348,6 @@ def run(db_pathx):
 
 
 
-
-
-
-
-
     FP=Face_Process() 
 
     firedb =FireDB()
@@ -387,6 +382,8 @@ def run(db_pathx):
 
 
         capture = cv2.VideoCapture(0)
+        MsgOnScreen="Video Surveillance"
+        MsgOnScreenStartAt=-1
 
 
         while(True):
@@ -413,7 +410,6 @@ def run(db_pathx):
             t1 = threading.Thread(target= HP.Hand, args = (frame,))
             t3 = threading.Thread(target= FD.blazeface, args = (img,HP,))
 
-
             if( time.time() - DBchecker>=2 and FP.Reco == False):
                 t5 = threading.Thread(target= firedb.checkdb, args = ())
                 t5.start()
@@ -433,7 +429,7 @@ def run(db_pathx):
 
 
 
-            elif((FP.endsignal or time.time() - HP.Startreco >7) and HP.Startreco !=-1  ):
+            if((FP.endsignal or time.time() - HP.Startreco >7) and HP.Startreco !=-1  ):
                 HP.Startreco=-1
                 FP.StarAT = -1
                 FP.Reco= False
@@ -450,7 +446,7 @@ def run(db_pathx):
                 list_threads.append(t2)
                 #print("face reco thread started")
 
-            elif (FD.Startreco != -1 and (FP.endsignal or time.time() - FD.Startreco >7) ):
+            if (FD.Startreco != -1 and (FP.endsignal or time.time() - FD.Startreco >7) ):
                 FP.StarAT = -1
                 FP.Reco= False
                 FD.Startreco = -1
@@ -498,6 +494,7 @@ def run(db_pathx):
 
             today = date.today()
             d4 = today.strftime("%b-%d-%Y")
+            d3 = today.strftime("%b-%d")
             directory= db_path+ "/LOGs" +"/"+d4
 
             if path.exists(directory) == False:
@@ -511,7 +508,8 @@ def run(db_pathx):
 
             if(FP.AAction): 
                 now = datetime.now()
-                dt_string = now.strftime("%H:%M:%S")
+                MsgOnScreenStartAt =time.time()
+                dt_string = now.strftime("%H:%M")
                 tmpName=guestsFile+"/"+str(firedb.counterguest)+".jpg"
                 if(FP.FlagHomeOwner):
                     if(FP.FlagOpen):
@@ -528,7 +526,8 @@ def run(db_pathx):
 
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Opened the door",'time':dt_string } ,ignore_index=True)
-                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Opened the door",dt_string,))
+                        MsgOnScreen=FP.Who+" Opened the door"
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Opened the door",d3+" @ "+dt_string,))
                         t6.start()
 
                     elif(FP.FlagClose):
@@ -548,7 +547,8 @@ def run(db_pathx):
 
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Closed the door",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Closed the door",dt_string,))
+                        MsgOnScreen=FP.Who+" Closed the door"
+                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Closed the door",d3+" @ "+dt_string,))
                         t6.start()
 
 
@@ -559,7 +559,7 @@ def run(db_pathx):
 
                         print(FP.Who+" Made Not A Predifined gesture ! ")
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Made Not A Predifined gesture !",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Made Not A Predifined gesture !",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Made Not A Predifined gesture !",d3+" @ "+dt_string,))
                         t6.start()              
 
 
@@ -575,6 +575,7 @@ def run(db_pathx):
                        #--------------send notification to app 
 
                         msg=FP.Who +" Waiting for a while and Made no gestures"
+                        cv2.putText(frame, "System meaasge: " +FP.Who +" Waiting for a while and Made no gestures" , (0,47), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (67, 67, 67),2)
                         t4 = threading.Thread(target= notify , args = (msg,firedb.counterguest , ))
                         t4.start()
                         firedb.counterguest =firedb.counterguest+1
@@ -582,7 +583,8 @@ def run(db_pathx):
 
                         #------------ updata log
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Made no gestures",'time':dt_string },ignore_index=True)
-                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Made no gestures",dt_string,))
+                        t6 = threading.Thread(target=goUpdateLOG , args = (FP.Who , " Made no gestures",d3+" @ "+dt_string,))
+                        MsgOnScreen=FP.Who+" Waiting for a while and Made no gestures"
                         t6.start()   
 
 
@@ -610,7 +612,8 @@ def run(db_pathx):
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Waiting and Tried to Acess !!",'time':dt_string },ignore_index=True)
 
-                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , "  Waiting and Tried to Acess !!",dt_string,))
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , "  Waiting and Tried to Acess !!",d3+" @ "+dt_string,))
+                        MsgOnScreen=FP.Who+" Waiting and Tried to Acess"
                         t6.start()   
 
 
@@ -637,8 +640,9 @@ def run(db_pathx):
 
 
                         LOG =LOG.append({'person\s' :FP.Who ,'Action':" Waiting",'time':dt_string },ignore_index=True)
-                        db.child("log").push({"person" :FP.Who, "action" : " Waiting " , "time": dt_string})
-                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Waiting ",dt_string,))
+                        MsgOnScreen=FP.Who+" Waiting "
+                        t6 = threading.Thread(target= goUpdateLOG , args = (FP.Who , " Waiting ",d3+" @ "+dt_string,))
+
                         t6.start()   
 
 
@@ -703,8 +707,14 @@ def run(db_pathx):
 
 
             cv2.putText(frame, "FPS: "+str(Fps), (0,25), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (67, 67, 67), 2)
-            cv2.putText(frame, "Previous Gesture: " +HP.prev_Gesture, (0,47), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (67, 67, 67), 2)
-            cv2.imshow('Computer Vision System', frame)   
+            #cv2.putText(frame, "Previous Gesture: " +HP.prev_Gesture, (0,47), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (67, 67, 67), 2)
+            if MsgOnScreen != "Video Surveillance":
+                if time.time() -MsgOnScreenStartAt >10 :
+                    MsgOnScreen ="Video Surveillance"
+
+            cv2.putText(frame, "System Msg: "+MsgOnScreen, (0,50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            cv2.imshow('Computer Vision System', frame)
+
 
             if (cv2.waitKey(1) & 0xFF == ord('q')) or firedb.systemOnFlag == False :
                 db.child("system").remove()
@@ -714,6 +724,7 @@ def run(db_pathx):
 
         cv2.destroyAllWindows()
         capture.release()
+
 
 
     
